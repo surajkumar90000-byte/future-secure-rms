@@ -562,9 +562,11 @@
     <script>
         const STORAGE_KEY = 'FUTURE_SECURE_RMS_DB_V3';
         const FIREBASE_URL_KEY = 'FUTURE_SECURE_FIREBASE_URL';
+        // Remembers the signed-in account on this browser after a page refresh.
+        const ACTIVE_USER_KEY = 'FUTURE_SECURE_RMS_ACTIVE_USER';
         
         // Paste your Firebase Realtime Database URL inside these quotes for automatic sync on all phones:
-        let DEFAULT_FIREBASE_URL = "https://future--rms-default-rtdb.firebaseio.com/"; 
+        let DEFAULT_FIREBASE_URL = ""; 
 
         let currentUser = null;
 
@@ -682,12 +684,25 @@
         }
 
         setInterval(syncFromCloud, 8000);
-        window.addEventListener('load', () => {
+        window.addEventListener('load', async () => {
             const savedUrl = localStorage.getItem(FIREBASE_URL_KEY) || DEFAULT_FIREBASE_URL;
             if (document.getElementById('firebaseUrlInput')) {
                 document.getElementById('firebaseUrlInput').value = savedUrl;
             }
-            syncFromCloud();
+
+            // Load cloud data first so the saved account is checked against the latest user list.
+            await syncFromCloud();
+            const savedUserId = localStorage.getItem(ACTIVE_USER_KEY);
+            if (savedUserId) {
+                const savedUser = db.users.find(u => String(u.userId).toLowerCase() === savedUserId.toLowerCase());
+                if (savedUser) {
+                    currentUser = savedUser;
+                    enterDashboard();
+                } else {
+                    // The account may have been deleted; do not keep a stale login.
+                    localStorage.removeItem(ACTIVE_USER_KEY);
+                }
+            }
         });
 
         function saveFirebaseConfig() {
@@ -764,6 +779,7 @@
                 return;
             }
             currentUser = user;
+            localStorage.setItem(ACTIVE_USER_KEY, user.userId);
             enterDashboard();
         }
 
@@ -799,6 +815,7 @@
 
         function logout() {
             currentUser = null;
+            localStorage.removeItem(ACTIVE_USER_KEY);
             document.getElementById('authView').classList.remove('hidden');
             document.getElementById('dashboardView').classList.add('hidden');
             document.getElementById('navUserSection').classList.add('hidden');
