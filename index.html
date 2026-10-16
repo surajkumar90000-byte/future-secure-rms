@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Future Secure RMS Society</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS for Excel Upload/Download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- html2pdf for PDF Download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+
+    <!-- Top Navigation Bar -->
+    <nav class="bg-indigo-950 text-white shadow-lg p-4 flex flex-wrap justify-between items-center gap-3">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 p-2.5 rounded-xl font-extrabold text-xl shadow">FS</div>
+            <div>
+                <h1 class="font-bold text-lg md:text-xl leading-tight">Future Secure RMS Society</h1>
+                <div class="flex items-center space-x-2 text-xs text-indigo-300">
+                    <span id="autoSaveStatus">Auto-Save: Ready</span>
+                    <span>•</span>
+                    <span id="cloudStatusBadge" class="text-amber-300 font-semibold">Local Mode</span>
+                </div>
+            </div>
+        </div>
+        <div id="navUserSection" class="hidden flex flex-wrap items-center gap-2">
+            <span id="currentUserBadge" class="bg-indigo-800 border border-indigo-600 px-3 py-1 rounded-full text-xs md:text-sm font-medium"></span>
+            <button onclick="openPasswordModal()" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-xs font-semibold transition">🔑 Change Password</button>
+            <button onclick="logout()" class="bg-rose-600 hover:bg-rose-700 px-3 py-1 rounded text-xs font-semibold transition">Logout</button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="max-w-7xl mx-auto p-3 md:p-6">
+
+        <!-- AUTHENTICATION VIEW (Login & Registration) -->
+        <div id="authView" class="max-w-md mx-auto bg-white rounded-2xl shadow-lg overflow-hidden p-6 mt-6 border border-slate-200">
+            <div class="flex border-b mb-6">
+                <button id="loginTabBtn" onclick="toggleAuth('login')" class="w-1/2 py-2.5 font-bold text-indigo-900 border-b-2 border-indigo-900">Login</button>
+                <button id="registerTabBtn" onclick="toggleAuth('register')" class="w-1/2 py-2.5 font-bold text-slate-400">New Registration</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700">User ID (Employee ID)</label>
+                    <input type="text" id="loginUserId" required class="w-full mt-1 p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Enter Employee ID">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700">Password</label>
+                    <input type="password" id="loginPassword" required class="w-full mt-1 p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Enter Password">
+                </div>
+                <button type="submit" class="w-full bg-indigo-900 hover:bg-indigo-800 text-white font-bold py-2.5 rounded-lg transition shadow">Login to Society Portal</button>
+                
+                <div class="text-xs text-slate-500 mt-4 bg-slate-50 p-3 rounded-lg border">
+                    <p class="font-bold text-slate-700 mb-1">Forgot Password?</p>
+                    <p class="mb-2">Contact the <b>Master Admin</b> to reset your password immediately.</p>
+                    <hr class="my-2">
+                    <p class="font-semibold text-slate-700 mb-1">Default Demo IDs:</p>
+                    <p>• <b>Master:</b> <code class="bg-slate-200 px-1">master</code> / Pass: <code class="bg-slate-200 px-1">master123</code></p>
+                    <p>• <b>Chairman:</b> <code class="bg-slate-200 px-1">chair</code> / Pass: <code class="bg-slate-200 px-1">123</code></p>
+                    <p>• <b>Vice Chairman:</b> <code class="bg-slate-200 px-1">vchair</code> / Pass: <code class="bg-slate-200 px-1">123</code></p>
+                    <p>• <b>Accountant:</b> <code class="bg-slate-200 px-1">acc</code> / Pass: <code class="bg-slate-200 px-1">123</code></p>
+                    <p>• <b>Member:</b> <code class="bg-slate-200 px-1">EMP101</code> / Pass: <code class="bg-slate-200 px-1">123</code></p>
+                </div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-3.5 hidden">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600">Full Name</label>
+                    <input type="text" id="regName" required class="w-full mt-1 p-2 border rounded-lg text-sm" placeholder="Enter Full Name">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600">User ID (Employee ID)</label>
+                    <input type="text" id="regUserId" required class="w-full mt-1 p-2 border rounded-lg text-sm" placeholder="e.g. EMP205">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600">Sex Category</label>
+                        <select id="regSex" required class="w-full mt-1 p-2 border rounded-lg text-sm bg-white">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600">Monthly Deposit (₹)</label>
+                        <input type="number" id="regMonthly" value="1000" required class="w-full mt-1 p-2 border rounded-lg text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600">Office Name</label>
+                    <input type="text" id="regOffice" required class="w-full mt-1 p-2 border rounded-lg text-sm" placeholder="e.g. Patna RMS / HRO">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600">Create Password</label>
+                    <input type="password" id="regPassword" required class="w-full mt-1 p-2 border rounded-lg text-sm" placeholder="Create strong password">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg transition shadow">Register Member</button>
+            </form>
+        </div>
+
+        <!-- MAIN DASHBOARD VIEW -->
+        <div id="dashboardView" class="hidden">
+            
+            <!-- Printable Area Wrapper -->
+            <div id="printableArea">
+                
+                <!-- SOCIETY FINANCIAL OVERVIEW (Global Corpus Card) -->
+                <div class="bg-white p-4 md:p-5 rounded-2xl shadow mb-5 border-l-4 border-indigo-700">
+                    <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
+                        <div>
+                            <h2 class="text-lg md:text-xl font-bold text-indigo-950">Future Secure RMS Society — Financial Corpus</h2>
+                            <p class="text-xs text-slate-500">Available Corpus automatically deducts disbursed approved loans and adds EMI repayments + Bank Interest</p>
+                        </div>
+                        <span id="activeFormulaBadge" class="bg-indigo-50 text-indigo-800 border border-indigo-200 px-3 py-1 rounded-full text-xs font-semibold"></span>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-6 gap-3 text-center">
+                        <div class="bg-slate-50 p-3 rounded-xl border">
+                            <p class="text-[11px] text-slate-500 font-medium">Total Member Monthly Deposit</p>
+                            <p class="text-base md:text-lg font-bold text-emerald-700" id="statTotalMonthlyDeposit">₹0</p>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border">
+                            <p class="text-[11px] text-slate-500 font-medium">Loan Interest & Fee Collected</p>
+                            <p class="text-base md:text-lg font-bold text-amber-600" id="statTotalInterest">₹0</p>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border">
+                            <p class="text-[11px] text-slate-500 font-medium">Bank Interest Added</p>
+                            <p class="text-base md:text-lg font-bold text-blue-600" id="statBankInterest">₹0</p>
+                        </div>
+                        <div class="bg-rose-50 p-3 rounded-xl border border-rose-200">
+                            <p class="text-[11px] text-rose-700 font-medium">Total Loans Disbursed (-)</p>
+                            <p class="text-base md:text-lg font-bold text-rose-700" id="statLoansDisbursed">₹0</p>
+                        </div>
+                        <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-200">
+                            <p class="text-[11px] text-emerald-700 font-medium">Loan Principal Repaid (+)</p>
+                            <p class="text-base md:text-lg font-bold text-emerald-700" id="statLoansRepaid">₹0</p>
+                        </div>
+                        <div class="bg-indigo-900 text-white p-3 rounded-xl shadow">
+                            <p class="text-[11px] text-indigo-200 font-semibold uppercase">Net Available Corpus</p>
+                            <p class="text-lg md:text-xl font-extrabold" id="statAvailableCorpus">₹0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PERSONAL MEMBER PASSBOOK SUMMARY (Separated Monthly Deposit vs Loan) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <!-- Box 1: My Monthly Contribution Only -->
+                    <div class="bg-white p-4 rounded-xl shadow border-t-4 border-emerald-600">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-bold text-slate-800 text-sm md:text-base">📗 My Contribution Passbook (Only Monthly Deposits)</h3>
+                            <span id="myPostBadge" class="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded text-xs font-bold uppercase"></span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center mt-3">
+                            <div class="p-2.5 bg-slate-50 rounded-lg border">
+                                <span class="text-[11px] text-slate-500 block">Employee ID & Office</span>
+                                <strong id="myEmpOffice" class="text-xs md:text-sm text-slate-800"></strong>
+                            </div>
+                            <div class="p-2.5 bg-slate-50 rounded-lg border">
+                                <span class="text-[11px] text-slate-500 block">Monthly Rate</span>
+                                <strong id="myMonthlyRate" class="text-sm md:text-base text-indigo-700">₹0</strong>
+                            </div>
+                            <div class="p-2.5 bg-emerald-50 rounded-lg border border-emerald-200">
+                                <span class="text-[11px] text-emerald-800 font-semibold block">My Total Monthly Deposit</span>
+                                <strong id="myMonthlyPrincipalTotal" class="text-base md:text-lg text-emerald-700">₹0</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Box 2: My Personal Loan Account Summary -->
+                    <div class="bg-white p-4 rounded-xl shadow border-t-4 border-amber-500">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-bold text-slate-800 text-sm md:text-base">📙 My Loan Summary (Taken, Paid & Remaining)</h3>
+                            <span id="myLoanEmiProgress" class="bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded text-xs font-bold">No Active Loan</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-2 text-center mt-3">
+                            <div class="p-2 bg-slate-50 rounded-lg border">
+                                <span class="text-[11px] text-slate-500 block">Loan Taken (P)</span>
+                                <strong id="myLoanTaken" class="text-xs md:text-sm text-slate-800">₹0</strong>
+                            </div>
+                            <div class="p-2 bg-slate-50 rounded-lg border">
+                                <span class="text-[11px] text-slate-500 block">Total Payable</span>
+                                <strong id="myLoanPayable" class="text-xs md:text-sm text-indigo-800">₹0</strong>
+                            </div>
+                            <div class="p-2 bg-emerald-50 rounded-lg border border-emerald-200">
+                                <span class="text-[11px] text-emerald-700 block">Total Paid</span>
+                                <strong id="myLoanPaid" class="text-xs md:text-sm text-emerald-700">₹0</strong>
+                            </div>
+                            <div class="p-2 bg-rose-50 rounded-lg border border-rose-200">
+                                <span class="text-[11px] text-rose-700 font-semibold block">Balance Left</span>
+                                <strong id="myLoanRemaining" class="text-sm md:text-base text-rose-700">₹0</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation & Action Toolbar -->
+                <div class="flex flex-wrap gap-2 mb-6 bg-white p-3 rounded-xl shadow items-center justify-between">
+                    <div class="flex flex-wrap gap-1.5">
+                        <button onclick="switchTab('tabOverview')" class="tab-btn bg-indigo-900 text-white px-3.5 py-2 rounded-lg text-xs md:text-sm font-semibold">1. Ledger & Deposits</button>
+                        <button onclick="switchTab('tabLoans')" class="tab-btn bg-slate-200 hover:bg-slate-300 text-slate-800 px-3.5 py-2 rounded-lg text-xs md:text-sm font-semibold">2. Loan Workflow & Member Wise Status</button>
+                        <button onclick="switchTab('tabCalculator')" class="tab-btn bg-slate-200 hover:bg-slate-300 text-slate-800 px-3.5 py-2 rounded-lg text-xs md:text-sm font-semibold">3. Lump Sum & EMI Calc</button>
+                        <button id="btnTabUsers" onclick="switchTab('tabUsers')" class="tab-btn hidden bg-slate-200 hover:bg-slate-300 text-slate-800 px-3.5 py-2 rounded-lg text-xs md:text-sm font-semibold">4. Users, Posts & Password Reset</button>
+                        <button id="btnTabMaster" onclick="switchTab('tabMaster')" class="tab-btn hidden bg-purple-700 hover:bg-purple-800 text-white px-3.5 py-2 rounded-lg text-xs md:text-sm font-semibold">⚙️ Master Settings & Bank Interest</button>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button onclick="manualSave()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs font-bold">💾 Save</button>
+                        <button onclick="exportPDF()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded text-xs font-bold">📄 PDF</button>
+                        <button onclick="exportExcel()" class="bg-green-700 hover:bg-green-800 text-white px-3 py-1.5 rounded text-xs font-bold">📊 Export Excel</button>
+                        <label class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-bold cursor-pointer">
+                            📂 Upload Excel
+                            <input type="file" id="excelUpload" accept=".xlsx, .xls" class="hidden" onchange="importExcel(event)">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- TAB 1: DASHBOARD, DEPOSIT ENTRY & LEDGER -->
+                <div id="tabOverview" class="tab-content active space-y-6">
+                    
+                    <!-- Accountant / Master Deposit Entry Box -->
+                    <div id="accountantDepositBox" class="hidden bg-white p-5 rounded-xl shadow border-t-4 border-emerald-600">
+                        <h3 class="font-bold text-base md:text-lg mb-1">Record Member Deposit / Loan EMI / Lump Sum (Accountant & Master Only)</h3>
+                        <p class="text-xs text-slate-500 mb-3">When selecting "Loan EMI", the system automatically tracks installment numbers like <b>1/12, 2/12</b> or <b>1/24, 2/24</b>.</p>
+                        
+                        <form onsubmit="handleAddDeposit(event)" class="grid grid-cols-1 md:grid-cols-6 gap-3">
+                            <div>
+                                <label class="text-xs font-semibold">Select Member (Emp ID)</label>
+                                <select id="depUserId" required class="w-full p-2 border rounded mt-1 text-sm bg-white" onchange="onDepositMemberOrTypeChange()"></select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold">Payment Type</label>
+                                <select id="depType" required class="w-full p-2 border rounded mt-1 text-sm bg-white" onchange="onDepositMemberOrTypeChange()">
+                                    <option value="Monthly Contribution">Monthly Contribution</option>
+                                    <option value="Loan EMI">Loan EMI (Installment)</option>
+                                    <option value="Lump Sum Loan Repayment">Lump Sum Loan Repayment</option>
+                                </select>
+                            </div>
+                            <div id="depLoanSelectWrapper" class="hidden">
+                                <label class="text-xs font-semibold text-indigo-800">Select Active Loan</label>
+                                <select id="depLoanId" class="w-full p-2 border border-indigo-300 rounded mt-1 text-sm bg-indigo-50" onchange="fillLoanEmiDetails()"></select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold">Principal Amount (₹)</label>
+                                <input type="number" step="1" id="depPrincipal" required class="w-full p-2 border rounded mt-1 text-sm" placeholder="Whole No.">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold">Interest (Whole No. ₹)</label>
+                                <input type="number" step="1" id="depInterest" value="0" required class="w-full p-2 border rounded mt-1 text-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold">Installment / Remarks</label>
+                                <input type="text" id="depNotes" class="w-full p-2 border rounded mt-1 text-sm" placeholder="e.g. EMI 1/12">
+                            </div>
+                            <div class="md:col-span-6 flex justify-end">
+                                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2 rounded-lg text-sm shadow">✅ Save Entry to Member Account</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Transaction Ledger Table -->
+                    <div class="bg-white p-5 rounded-xl shadow overflow-x-auto">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-base md:text-lg">Society Transaction & Installment Ledger</h3>
+                        </div>
+                        <table class="w-full text-left border-collapse text-xs md:text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 border-b">
+                                    <th class="p-2.5">Date</th>
+                                    <th class="p-2.5">Employee ID</th>
+                                    <th class="p-2.5">Member Name</th>
+                                    <th class="p-2.5">Category</th>
+                                    <th class="p-2.5">Installment No.</th>
+                                    <th class="p-2.5">Principal (₹)</th>
+                                    <th class="p-2.5">Interest (₹)</th>
+                                    <th class="p-2.5">Total Deposited (₹)</th>
+                                    <th class="p-2.5">Remarks</th>
+                                    <th class="p-2.5">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ledgerTableBody" class="divide-y"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 2: LOAN APPLICATION, APPROVAL WORKFLOW & MEMBER LOAN TRACKING -->
+                <div id="tabLoans" class="tab-content space-y-6">
+                    
+                    <!-- Apply for Loan Form -->
+                    <div class="bg-white p-5 rounded-xl shadow border-t-4 border-indigo-600">
+                        <h3 class="font-bold text-base md:text-lg mb-1">Apply for Society Loan</h3>
+                        <p class="text-xs text-slate-500 mb-4">Approval Hierarchy: <b>Member Applies ➔ Accountant ➔ Vice Chairman (Forwards to Chairman OR Approves in Chairman's absence) ➔ Chairman</b></p>
+                        
+                        <form onsubmit="handleLoanApply(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            <div>
+                                <label class="text-xs font-semibold">Loan Principal Amount (₹)</label>
+                                <input type="number" id="loanAmount" required min="100" step="1" oninput="previewLoanCalc()" class="w-full p-2 border rounded mt-1 text-sm" placeholder="e.g. 50000">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold">Time (in Months)</label>
+                                <input type="number" id="loanMonths" required min="1" max="240" step="1" oninput="previewLoanCalc()" class="w-full p-2 border rounded mt-1 text-sm" placeholder="e.g. 12 or 24">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold">Purpose of Loan</label>
+                                <input type="text" id="loanPurpose" required class="w-full p-2 border rounded mt-1 text-sm" placeholder="Medical, Education, Marriage">
+                            </div>
+                            <div>
+                                <button type="submit" class="w-full bg-indigo-900 hover:bg-indigo-800 text-white font-bold py-2 rounded-lg text-sm shadow">Submit Loan Request</button>
+                            </div>
+                        </form>
+                        
+                        <!-- Single Unified Formula Preview Box -->
+                        <div id="loanPreviewBox" class="mt-4 p-3.5 bg-indigo-50 rounded-xl border border-indigo-200 text-xs hidden">
+                            <p class="font-bold text-indigo-950 mb-1" id="previewFormulaLabel">Society Formula Calculation (Rounded to Nearest Whole No.):</p>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+                                <div class="bg-white p-2 rounded border">
+                                    <span class="text-slate-500 block">Principal Amount</span>
+                                    <strong id="prevPrincipal" class="text-sm">₹0</strong>
+                                </div>
+                                <div class="bg-white p-2 rounded border">
+                                    <span class="text-slate-500 block">Interest (Principal * Rate / 100)</span>
+                                    <strong id="prevInterest" class="text-sm text-amber-700">₹0</strong>
+                                </div>
+                                <div class="bg-white p-2 rounded border">
+                                    <span class="text-slate-500 block">Total Payable Amount</span>
+                                    <strong id="prevTotalPayable" class="text-sm text-indigo-800">₹0</strong>
+                                </div>
+                                <div class="bg-emerald-50 p-2 rounded border border-emerald-200">
+                                    <span class="text-emerald-800 block font-semibold">Monthly EMI (Whole No.)</span>
+                                    <strong id="prevEMI" class="text-base text-emerald-700">₹0 / mo</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Member-Wise Active Loan Balance Summary -->
+                    <div class="bg-white p-5 rounded-xl shadow overflow-x-auto border-t-4 border-amber-500">
+                        <h3 class="font-bold text-base md:text-lg mb-1">📊 Member-Wise Loan Recovery Status (Who Took How Much, Paid & Remaining)</h3>
+                        <p class="text-xs text-slate-500 mb-3">Complete tracking of all Approved Loans, installments completed (e.g. 1/12, 2/24), total amount paid, and remaining balance.</p>
+                        <table class="w-full text-left border-collapse text-xs md:text-sm">
+                            <thead>
+                                <tr class="bg-amber-50 border-b text-amber-950">
+                                    <th class="p-2.5">Loan ID</th>
+                                    <th class="p-2.5">Emp ID & Name</th>
+                                    <th class="p-2.5">Office</th>
+                                    <th class="p-2.5">Principal Taken</th>
+                                    <th class="p-2.5">Interest (Whole)</th>
+                                    <th class="p-2.5">Total Payable</th>
+                                    <th class="p-2.5">Monthly EMI</th>
+                                    <th class="p-2.5">Installments (EMIs)</th>
+                                    <th class="p-2.5">Amount Paid</th>
+                                    <th class="p-2.5">Remaining Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activeLoansSummaryBody" class="divide-y"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- All Loan Applications & Approval Pipeline (WITH INTEREST COLUMN) -->
+                    <div class="bg-white p-5 rounded-xl shadow overflow-x-auto">
+                        <h3 class="font-bold text-base md:text-lg mb-3">Loan Approval Pipeline (Accountant ➔ Vice Chairman ➔ Chairman)</h3>
+                        <table class="w-full text-left border-collapse text-xs md:text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 border-b">
+                                    <th class="p-2">Loan ID</th>
+                                    <th class="p-2">Applicant (Emp ID)</th>
+                                    <th class="p-2">Principal (₹)</th>
+                                    <th class="p-2">Duration</th>
+                                    <th class="p-2">Interest (₹)</th>
+                                    <th class="p-2">Total Payable (₹)</th>
+                                    <th class="p-2">Monthly EMI</th>
+                                    <th class="p-2">Purpose</th>
+                                    <th class="p-2">Current Status</th>
+                                    <th class="p-2">Action / Approval</th>
+                                </tr>
+                            </thead>
+                            <tbody id="loanTableBody" class="divide-y"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 3: EMI & LUMP SUM CALCULATOR -->
+                <div id="tabCalculator" class="tab-content space-y-6">
+                    <div class="bg-white p-5 rounded-xl shadow border-t-4 border-indigo-600">
+                        <h3 class="font-bold text-base md:text-lg mb-1">Lump Sum Deposit & EMI Calculator (Nearest Whole Number)</h3>
+                        <p class="text-xs text-slate-500 mb-4">Formula: <code>Interest = Principal * Rate / 100</code> | <code>Total Payable = Principal + Interest</code> | <code>EMI = Total Payable / Time (in months)</code></p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <label class="text-xs font-semibold">Loan Principal Amount (₹)</label>
+                                <input type="number" id="calcPrincipal" value="50000" step="1" oninput="runFullCalculator()" class="w-full p-2.5 border rounded-lg mt-1">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold">Lump Sum Deposit Made (₹)</label>
+                                <input type="number" id="calcLumpSum" value="10000" step="1" oninput="runFullCalculator()" class="w-full p-2.5 border rounded-lg mt-1 bg-amber-50">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold">Remaining Time (in Months)</label>
+                                <input type="number" id="calcMonths" value="12" step="1" min="1" oninput="runFullCalculator()" class="w-full p-2.5 border rounded-lg mt-1">
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-indigo-50 rounded-xl border border-indigo-200 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                            <div class="bg-white p-3 rounded-lg shadow-sm">
+                                <span class="text-xs text-slate-500 block">Net Principal After Lump Sum</span>
+                                <strong id="resNetPrincipal" class="text-lg text-slate-800">₹0</strong>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg shadow-sm">
+                                <span class="text-xs text-slate-500 block">Interest (Nearest Whole No.)</span>
+                                <strong id="resInterest" class="text-lg text-amber-600">₹0</strong>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg shadow-sm">
+                                <span class="text-xs text-slate-500 block">Total Payable Amount</span>
+                                <strong id="resTotalPayable" class="text-lg text-indigo-800">₹0</strong>
+                            </div>
+                            <div class="bg-emerald-600 text-white p-3 rounded-lg shadow-sm">
+                                <span class="text-xs text-emerald-100 block">Monthly EMI (Whole No.)</span>
+                                <strong id="resEMI" class="text-xl font-extrabold">₹0 / mo</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: USER MANAGEMENT, POST ASSIGNMENT & PASSWORD RESET -->
+                <div id="tabUsers" class="tab-content space-y-6">
+                    <div class="bg-white p-5 rounded-xl shadow border-t-4 border-purple-600">
+                        <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                            <div>
+                                <h3 class="font-bold text-base md:text-lg">Society Members, Post Assignment & Password Reset</h3>
+                                <p class="text-xs text-slate-500">Master or Chairman can assign posts. Master can view or reset any forgotten password.</p>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs md:text-sm">
+                                <thead>
+                                    <tr class="bg-slate-100 border-b">
+                                        <th class="p-2.5">User ID (Emp ID)</th>
+                                        <th class="p-2.5">Full Name</th>
+                                        <th class="p-2.5">Sex</th>
+                                        <th class="p-2.5">Office Name</th>
+                                        <th class="p-2.5">Assigned Post</th>
+                                        <th class="p-2.5">Monthly Rate (₹)</th>
+                                        <th class="p-2.5">Password / Reset</th>
+                                        <th class="p-2.5">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="userTableBody" class="divide-y"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: MASTER SETTINGS (Bank Interest, Formula Correction, Rate Change, Firebase Cloud Sync) -->
+                <div id="tabMaster" class="tab-content space-y-6">
+                    
+                    <!-- 1. Add Bank Interest to Corpus -->
+                    <div class="bg-white p-5 rounded-xl shadow border-t-4 border-blue-600">
+                        <h3 class="font-bold text-base md:text-lg mb-1">🏦 Add Bank Interest to Society Corpus (Master Authority)</h3>
+                        <p class="text-xs text-slate-500 mb-3">Any interest received from the society's bank account added here will directly increase the Net Available Corpus.</p>
+                        
+                        <form onsubmit="handleAddBankInterest(event)" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end mb-4">
+                            <div>
+                                <label class="text-xs font-semibold">Bank Interest Amount (Whole No. ₹)</label>
+                                <input type="number" step="1" id="bankIntAmount" required class="w-full p-2 border rounded mt-1 text-sm" placeholder="e.g. 5000">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="text-xs font-semibold">Bank Name / Period Remarks</label>
+                                <input type="text" id="bankIntNotes" required class="w-full p-2 border rounded mt-1 text-sm" placeholder="e.g. SBI Savings Q1 Interest">
+                            </div>
+                            <div>
+                                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg text-sm">➕ Add to Corpus</button>
+                            </div>
+                        </form>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="bg-slate-100 border-b">
+                                        <th class="p-2">Date</th>
+                                        <th class="p-2">Amount (₹)</th>
+                                        <th class="p-2">Remarks</th>
+                                        <th class="p-2">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bankInterestTableBody" class="divide-y"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 2. Formula Correction & Interest Rate Control -->
+                    <div class="bg-white p-5 rounded-xl shadow border-t-4 border-purple-700">
+                        <h3 class="font-bold text-base md:text-lg mb-1">🧮 Master Formula & Interest Rate Control</h3>
+                        <p class="text-xs text-slate-500 mb-4">Change the Interest Rate (%) or modify the Interest calculation formula at any time. All results automatically round to the nearest whole number.</p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="text-xs font-semibold block">Interest Rate (%)</label>
+                                <input type="number" step="0.01" id="masterRateInput" class="w-full p-2 border rounded mt-1 text-sm font-bold text-indigo-900">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="text-xs font-semibold block">Interest Formula Expression (Variables: <code>P</code> = Principal, <code>R</code> = Rate, <code>M</code> = Months)</label>
+                                <input type="text" id="masterFormulaInput" class="w-full p-2 border rounded mt-1 text-sm font-mono bg-slate-50">
+                                <div class="flex flex-wrap gap-2 mt-2 text-[11px]">
+                                    <button type="button" onclick="setPresetFormula('P * R / 100')" class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded font-semibold">Default: Interest = P * R / 100</button>
+                                    <button type="button" onclick="setPresetFormula('(P * R * (M/12)) / 100')" class="bg-slate-200 text-slate-800 px-2 py-1 rounded">Yearly SI: (P * R * (M/12)) / 100</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="saveMasterFormulaSettings()" class="mt-4 bg-purple-700 hover:bg-purple-800 text-white font-bold px-5 py-2 rounded-lg text-sm">💾 Update Rate & Formula</button>
+                    </div>
+
+                    <!-- 3. Firebase Live Cloud Sync Configuration -->
+                    <div class="bg-white p-5 rounded-xl shadow border-t-4 border-amber-500">
+                        <h3 class="font-bold text-base md:text-lg mb-1">☁️ Firebase Realtime Database Cloud Sync</h3>
+                        <p class="text-xs text-slate-500 mb-3">Paste your Google Firebase Realtime Database URL below so data automatically syncs across all members' phones.</p>
+                        <div class="flex flex-col md:flex-row gap-3">
+                            <input type="url" id="firebaseUrlInput" class="flex-1 p-2 border rounded-lg text-sm font-mono" placeholder="https://your-project-default-rtdb.firebaseio.com/">
+                            <button onclick="saveFirebaseConfig()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-5 py-2 rounded-lg text-sm">🔗 Connect & Sync Cloud</button>
+                            <button onclick="resetAllData()" class="bg-rose-700 hover:bg-rose-800 text-white font-bold px-4 py-2 rounded-lg text-xs">⚠️ Factory Reset</button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div> <!-- End Printable Area -->
+
+        </div>
+    </div>
+
+    <!-- PASSWORD CHANGE MODAL -->
+    <div id="passwordModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-sm w-full p-5 shadow-xl">
+            <h3 class="font-bold text-lg mb-3">🔑 Change My Password</h3>
+            <form onsubmit="handleChangeOwnPassword(event)" class="space-y-3">
+                <div>
+                    <label class="text-xs font-semibold">Current Password</label>
+                    <input type="password" id="currPassInput" required class="w-full p-2 border rounded mt-1 text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold">New Password</label>
+                    <input type="password" id="newPassInput" required class="w-full p-2 border rounded mt-1 text-sm">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closePasswordModal()" class="px-4 py-1.5 bg-slate-200 rounded text-sm font-semibold">Cancel</button>
+                    <button type="submit" class="px-4 py-1.5 bg-indigo-900 text-white rounded text-sm font-bold">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- APPLICATION JAVASCRIPT LOGIC -->
+    <script>
+        const STORAGE_KEY = 'FUTURE_SECURE_RMS_DB_V3';
+        const FIREBASE_URL_KEY = 'FUTURE_SECURE_FIREBASE_URL';
+        
+        // Paste your Firebase Realtime Database URL inside these quotes for automatic sync on all phones:
+        let DEFAULT_FIREBASE_URL = ""; 
+
+        let currentUser = null;
+
+        const defaultDB = {
+            settings: {
+                interestRate: 3,
+                // Interest formula: Interest = Principal * Rate / 100
+                interestFormula: "P * R / 100"
+            },
+            users: [
+                { userId: 'master', name: 'Master Administrator', sex: 'Male', office: 'Patna RMS HQ', password: 'master123', role: 'master', monthlyContribution: 1000 },
+                { userId: 'chair', name: 'Rajesh Sharma', sex: 'Male', office: 'Patna RMS', password: '123', role: 'chairman', monthlyContribution: 1000 },
+                { userId: 'vchair', name: 'Anita Verma', sex: 'Female', office: 'Patna RMS', password: '123', role: 'vice_chairman', monthlyContribution: 1000 },
+                { userId: 'acc', name: 'Sunil Gupta', sex: 'Male', office: 'Patna RMS', password: '123', role: 'accountant', monthlyContribution: 1000 },
+                { userId: 'EMP101', name: 'Amit Kumar', sex: 'Male', office: 'Patna RMS Sorting', password: '123', role: 'member', monthlyContribution: 1000 }
+            ],
+            transactions: [
+                { id: 'TXN101', date: '2025-01-10', userId: 'EMP101', type: 'Monthly Contribution', loanId: '', installmentLabel: '-', principal: 1000, interest: 0, notes: 'Jan Monthly Deposit' },
+                { id: 'TXN102', date: '2025-02-10', userId: 'EMP101', type: 'Monthly Contribution', loanId: '', installmentLabel: '-', principal: 1000, interest: 0, notes: 'Feb Monthly Deposit' },
+                { id: 'TXN103', date: '2025-02-15', userId: 'EMP101', type: 'Loan EMI', loanId: 'LN501', installmentLabel: '1/12', principal: 2000, interest: 60, notes: 'First EMI' }
+            ],
+            loans: [
+                {
+                    id: 'LN501',
+                    userId: 'EMP101',
+                    userName: 'Amit Kumar',
+                    office: 'Patna RMS Sorting',
+                    principal: 24000,
+                    months: 12,
+                    purpose: 'Family Function',
+                    interestTotal: 720,
+                    totalPayable: 24720,
+                    monthlyEMI: 2060,
+                    status: 'Approved by Chairman',
+                    approvedByNote: 'Disbursed from Corpus'
+                }
+            ],
+            bankInterests: [
+                { id: 'BNK1', date: '2025-01-31', amount: 2500, notes: 'Savings Account Quarterly Interest' }
+            ]
+        };
+
+        let db = loadDB();
+
+        function getFirebaseEndpoint() {
+            let url = localStorage.getItem(FIREBASE_URL_KEY) || DEFAULT_FIREBASE_URL;
+            if (!url) return null;
+            url = url.trim();
+            if (!url.endsWith('/')) url += '/';
+            return url + 'society_db.json';
+        }
+
+        function loadDB() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (!parsed.settings) parsed.settings = defaultDB.settings;
+                    if (!parsed.bankInterests) parsed.bankInterests = [];
+                    return parsed;
+                } catch (e) { console.error(e); }
+            }
+            return JSON.parse(JSON.stringify(defaultDB));
+        }
+
+        async function syncFromCloud() {
+            const endpoint = getFirebaseEndpoint();
+            const badge = document.getElementById('cloudStatusBadge');
+            if (!endpoint) {
+                if (badge) { badge.innerText = "Local Mode (Set Firebase in Master)"; badge.className = "text-amber-300 font-semibold"; }
+                return;
+            }
+            try {
+                const res = await fetch(endpoint);
+                const cloudData = await res.json();
+                if (cloudData && cloudData.users) {
+                    db = cloudData;
+                    if (!db.settings) db.settings = defaultDB.settings;
+                    if (!db.bankInterests) db.bankInterests = [];
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+                    if (currentUser) renderAll();
+                }
+                if (badge) { badge.innerText = "☁️ Cloud Synced Live"; badge.className = "text-emerald-300 font-bold"; }
+            } catch (err) {
+                if (badge) { badge.innerText = "⚠️ Cloud Offline (Using Local)"; badge.className = "text-rose-300 font-semibold"; }
+            }
+        }
+
+        async function saveDB(msg = 'Auto-Saved') {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+            const statusEl = document.getElementById('autoSaveStatus');
+            const now = new Date().toLocaleTimeString();
+            if (statusEl) statusEl.innerText = `${msg} at ${now}`;
+
+            const endpoint = getFirebaseEndpoint();
+            if (endpoint) {
+                try {
+                    await fetch(endpoint, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(db)
+                    });
+                    const badge = document.getElementById('cloudStatusBadge');
+                    if (badge) { badge.innerText = "☁️ Cloud Synced Live"; badge.className = "text-emerald-300 font-bold"; }
+                } catch (e) {
+                    console.warn("Cloud sync failed, saved locally.");
+                }
+            }
+            if (currentUser) renderAll();
+        }
+
+        function manualSave() {
+            saveDB('Manually Saved');
+            alert('All society records saved!');
+        }
+
+        setInterval(syncFromCloud, 8000);
+        window.addEventListener('load', () => {
+            const savedUrl = localStorage.getItem(FIREBASE_URL_KEY) || DEFAULT_FIREBASE_URL;
+            if (document.getElementById('firebaseUrlInput')) {
+                document.getElementById('firebaseUrlInput').value = savedUrl;
+            }
+            syncFromCloud();
+        });
+
+        function saveFirebaseConfig() {
+            const val = document.getElementById('firebaseUrlInput').value.trim();
+            if (!val) {
+                localStorage.removeItem(FIREBASE_URL_KEY);
+                alert('Cloud Sync URL removed. Running in Local Mode.');
+                syncFromCloud();
+                return;
+            }
+            localStorage.setItem(FIREBASE_URL_KEY, val);
+            saveDB('Pushed to Cloud');
+            alert('Firebase Cloud Sync Connected! Data is now syncing across all devices.');
+        }
+
+        // FORMULA ENGINE (Interest = Principal * Rate / 100, rounded to Nearest Whole Number)
+        function calculateLoanMetrics(principal, months) {
+            const P = Math.round(Number(principal) || 0);
+            const M = Math.max(1, Math.round(Number(months) || 1));
+            const R = Number(db.settings?.interestRate ?? 3);
+            const expr = db.settings?.interestFormula || "P * R / 100";
+
+            let rawInterest = (P * R) / 100;
+            try {
+                const fn = new Function('P', 'R', 'M', `return (${expr});`);
+                const evaluated = fn(P, R, M);
+                if (!isNaN(evaluated) && isFinite(evaluated)) {
+                    rawInterest = evaluated;
+                }
+            } catch (e) {
+                console.error("Formula evaluation error, using default P * R / 100:", e);
+            }
+
+            const interestTotal = Math.max(0, Math.round(rawInterest));
+            const totalPayable = Math.round(P + interestTotal);
+            const monthlyEMI = Math.round(totalPayable / M);
+
+            return {
+                principal: P,
+                interestTotal,
+                totalPayable,
+                monthlyEMI
+            };
+        }
+
+        // AUTHENTICATION
+        function toggleAuth(mode) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const loginBtn = document.getElementById('loginTabBtn');
+            const regBtn = document.getElementById('registerTabBtn');
+
+            if (mode === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                loginBtn.className = 'w-1/2 py-2.5 font-bold text-indigo-900 border-b-2 border-indigo-900';
+                regBtn.className = 'w-1/2 py-2.5 font-bold text-slate-400';
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                regBtn.className = 'w-1/2 py-2.5 font-bold text-indigo-900 border-b-2 border-indigo-900';
+                loginBtn.className = 'w-1/2 py-2.5 font-bold text-slate-400';
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const uid = document.getElementById('loginUserId').value.trim();
+            const pass = document.getElementById('loginPassword').value.trim();
+
+            const user = db.users.find(u => u.userId.toLowerCase() === uid.toLowerCase() && u.password === pass);
+            if (!user) {
+                alert('Invalid User ID (Employee ID) or Password!');
+                return;
+            }
+            currentUser = user;
+            enterDashboard();
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('regName').value.trim();
+            const uid = document.getElementById('regUserId').value.trim();
+            const sex = document.getElementById('regSex').value;
+            const office = document.getElementById('regOffice').value.trim();
+            const pass = document.getElementById('regPassword').value.trim();
+            const monthly = Math.round(parseFloat(document.getElementById('regMonthly').value) || 1000);
+
+            if (db.users.some(u => u.userId.toLowerCase() === uid.toLowerCase())) {
+                alert('This User ID (Employee ID) is already registered!');
+                return;
+            }
+
+            const newUser = {
+                userId: uid,
+                name,
+                sex,
+                office,
+                password: pass,
+                role: 'member',
+                monthlyContribution: monthly
+            };
+            db.users.push(newUser);
+            saveDB('New Member Registered');
+            alert(`Registration successful for ${name} (${uid})! Please login.`);
+            e.target.reset();
+            toggleAuth('login');
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('authView').classList.remove('hidden');
+            document.getElementById('dashboardView').classList.add('hidden');
+            document.getElementById('navUserSection').classList.add('hidden');
+        }
+
+        function openPasswordModal() {
+            document.getElementById('passwordModal').classList.remove('hidden');
+        }
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.add('hidden');
+        }
+        function handleChangeOwnPassword(e) {
+            e.preventDefault();
+            const curr = document.getElementById('currPassInput').value.trim();
+            const next = document.getElementById('newPassInput').value.trim();
+
+            if (currentUser.password !== curr) {
+                alert('Current password is incorrect!');
+                return;
+            }
+            const u = db.users.find(x => x.userId === currentUser.userId);
+            if (u) {
+                u.password = next;
+                currentUser.password = next;
+                saveDB('Password Changed');
+                alert('Your password has been updated successfully!');
+                e.target.reset();
+                closePasswordModal();
+            }
+        }
+
+        function masterResetUserPassword(uid) {
+            if (currentUser.role !== 'master') {
+                alert('Only Master User can reset passwords!');
+                return;
+            }
+            const u = db.users.find(x => x.userId === uid);
+            if (!u) return;
+            const newPass = prompt(`Enter new password for ${u.name} (${u.userId}):`, "123456");
+            if (newPass !== null && newPass.trim() !== "") {
+                u.password = newPass.trim();
+                saveDB(`Password reset for ${uid}`);
+                alert(`Password for ${u.name} (${uid}) has been reset to: ${u.password}`);
+            }
+        }
+
+        function enterDashboard() {
+            const fresh = db.users.find(u => u.userId === currentUser.userId);
+            if (fresh) currentUser = fresh;
+
+            document.getElementById('authView').classList.add('hidden');
+            document.getElementById('dashboardView').classList.remove('hidden');
+            document.getElementById('navUserSection').classList.remove('hidden');
+
+            const roleLabels = {
+                master: 'MASTER ADMIN',
+                chairman: 'CHAIRMAN',
+                vice_chairman: 'VICE CHAIRMAN',
+                accountant: 'ACCOUNTANT',
+                member: 'MEMBER'
+            };
+
+            document.getElementById('currentUserBadge').innerText = `${currentUser.name} (${currentUser.userId}) • ${roleLabels[currentUser.role]}`;
+            
+            const isAccOrMaster = (currentUser.role === 'accountant' || currentUser.role === 'master');
+            document.getElementById('accountantDepositBox').classList.toggle('hidden', !isAccOrMaster);
+
+            const canManageUsers = (currentUser.role === 'master' || currentUser.role === 'chairman');
+            document.getElementById('btnTabUsers').classList.toggle('hidden', !canManageUsers);
+            document.getElementById('btnTabMaster').classList.toggle('hidden', currentUser.role !== 'master');
+
+            document.getElementById('masterRateInput').value = db.settings?.interestRate ?? 3;
+            document.getElementById('masterFormulaInput').value = db.settings?.interestFormula || "P * R / 100";
+
+            renderAll();
+            runFullCalculator();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function previewLoanCalc() {
+            const p = parseFloat(document.getElementById('loanAmount').value);
+            const m = parseInt(document.getElementById('loanMonths').value);
+            const box = document.getElementById('loanPreviewBox');
+
+            if (p > 0 && m > 0) {
+                box.classList.remove('hidden');
+                const res = calculateLoanMetrics(p, m);
+                document.getElementById('prevPrincipal').innerText = `₹${res.principal.toLocaleString()}`;
+                document.getElementById('prevInterest').innerText = `₹${res.interestTotal.toLocaleString()}`;
+                document.getElementById('prevTotalPayable').innerText = `₹${res.totalPayable.toLocaleString()}`;
+                document.getElementById('prevEMI').innerText = `₹${res.monthlyEMI.toLocaleString()} / mo (for ${m} mos)`;
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
+        function runFullCalculator() {
+            const p = parseFloat(document.getElementById('calcPrincipal').value) || 0;
+            const lump = parseFloat(document.getElementById('calcLumpSum').value) || 0;
+            const m = parseInt(document.getElementById('calcMonths').value) || 1;
+
+            const netP = Math.max(0, Math.round(p - lump));
+            const res = calculateLoanMetrics(netP, m);
+
+            document.getElementById('resNetPrincipal').innerText = `₹${netP.toLocaleString()}`;
+            document.getElementById('resInterest').innerText = `₹${res.interestTotal.toLocaleString()}`;
+            document.getElementById('resTotalPayable').innerText = `₹${res.totalPayable.toLocaleString()}`;
+            document.getElementById('resEMI').innerText = `₹${res.monthlyEMI.toLocaleString()} / mo`;
+        }
+
+        function onDepositMemberOrTypeChange() {
+            const uid = document.getElementById('depUserId').value;
+            const type = document.getElementById('depType').value;
+            const user = db.users.find(u => u.userId === uid);
+            const loanSelectWrapper = document.getElementById('depLoanSelectWrapper');
+            const loanSelect = document.getElementById('depLoanId');
+
+            if (type === 'Monthly Contribution') {
+                loanSelectWrapper.classList.add('hidden');
+                if (user) {
+                    document.getElementById('depPrincipal').value = Math.round(user.monthlyContribution || 1000);
+                    document.getElementById('depInterest').value = 0;
+                    document.getElementById('depNotes').value = 'Monthly Deposit';
+                }
+            } else {
+                const memberApprovedLoans = db.loans.filter(l => l.userId === uid && l.status.includes('Approved'));
+                loanSelectWrapper.classList.remove('hidden');
+                if (memberApprovedLoans.length === 0) {
+                    loanSelect.innerHTML = `<option value="">No Approved Loan Found</option>`;
+                    document.getElementById('depPrincipal').value = '';
+                    document.getElementById('depInterest').value = 0;
+                    document.getElementById('depNotes').value = '';
+                } else {
+                    loanSelect.innerHTML = memberApprovedLoans.map(l => `<option value="${l.id}">${l.id} - ₹${l.principal} (${l.months}m)</option>`).join('');
+                    fillLoanEmiDetails();
+                }
+            }
+        }
+
+        function fillLoanEmiDetails() {
+            const loanId = document.getElementById('depLoanId').value;
+            const type = document.getElementById('depType').value;
+            const loan = db.loans.find(l => l.id === loanId);
+            if (!loan) return;
+
+            const existingEmis = db.transactions.filter(t => t.loanId === loan.id && t.type === 'Loan EMI').length;
+            const nextInstallmentNum = existingEmis + 1;
+            const installmentFraction = `${nextInstallmentNum}/${loan.months}`;
+
+            if (type === 'Loan EMI') {
+                const perMonthPrincipal = Math.round(loan.principal / loan.months);
+                const perMonthInterest = Math.max(0, Math.round(loan.monthlyEMI - perMonthPrincipal));
+                document.getElementById('depPrincipal').value = perMonthPrincipal;
+                document.getElementById('depInterest').value = perMonthInterest;
+                document.getElementById('depNotes').value = `EMI ${installmentFraction}`;
+            } else if (type === 'Lump Sum Loan Repayment') {
+                document.getElementById('depPrincipal').value = '';
+                document.getElementById('depInterest').value = 0;
+                document.getElementById('depNotes').value = `Lump Sum towards ${loan.id}`;
+            }
+        }
+
+        function handleAddDeposit(e) {
+            e.preventDefault();
+            const userId = document.getElementById('depUserId').value;
+            const type = document.getElementById('depType').value;
+            const principal = Math.round(parseFloat(document.getElementById('depPrincipal').value) || 0);
+            const interest = Math.round(parseFloat(document.getElementById('depInterest').value) || 0);
+            let notes = document.getElementById('depNotes').value.trim();
+
+            let loanId = '';
+            let installmentLabel = '-';
+
+            if (type === 'Loan EMI' || type === 'Lump Sum Loan Repayment') {
+                loanId = document.getElementById('depLoanId').value;
+                if (!loanId) {
+                    alert('This member does not have an Approved Loan to pay EMI towards!');
+                    return;
+                }
+                const loan = db.loans.find(l => l.id === loanId);
+                if (loan && type === 'Loan EMI') {
+                    const paidCount = db.transactions.filter(t => t.loanId === loan.id && t.type === 'Loan EMI').length + 1;
+                    installmentLabel = `${paidCount}/${loan.months}`;
+                    if (!notes) notes = `EMI ${installmentLabel}`;
+                } else if (loan) {
+                    installmentLabel = 'Lump Sum';
+                }
+            }
+
+            const newTxn = {
+                id: 'TXN' + Date.now().toString().slice(-4),
+                date: new Date().toISOString().split('T')[0],
+                userId,
+                type,
+                loanId,
+                installmentLabel,
+                principal,
+                interest,
+                notes
+            };
+
+            db.transactions.unshift(newTxn);
+            saveDB('Entry Recorded');
+            onDepositMemberOrTypeChange();
+        }
+
+        function deleteTransaction(id) {
+            if (currentUser.role !== 'master' && currentUser.role !== 'accountant') {
+                alert('Only Master or Accountant can delete ledger entries.');
+                return;
+            }
+            if (!confirm('Delete this transaction entry?')) return;
+            db.transactions = db.transactions.filter(t => t.id !== id);
+            saveDB('Transaction Deleted');
+        }
+
+        function handleLoanApply(e) {
+            e.preventDefault();
+            const p = Math.round(parseFloat(document.getElementById('loanAmount').value));
+            const m = parseInt(document.getElementById('loanMonths').value);
+            const purpose = document.getElementById('loanPurpose').value.trim();
+            const metrics = calculateLoanMetrics(p, m);
+
+            const newLoan = {
+                id: 'LN' + Date.now().toString().slice(-4),
+                userId: currentUser.userId,
+                userName: currentUser.name,
+                office: currentUser.office || '-',
+                principal: metrics.principal,
+                months: m,
+                purpose,
+                interestTotal: metrics.interestTotal,
+                totalPayable: metrics.totalPayable,
+                monthlyEMI: metrics.monthlyEMI,
+                status: 'Pending Accountant',
+                approvedByNote: ''
+            };
+
+            db.loans.unshift(newLoan);
+            saveDB('Loan Application Submitted');
+            e.target.reset();
+            document.getElementById('loanPreviewBox').classList.add('hidden');
+            alert(`Loan application ${newLoan.id} submitted! Sent to Accountant.`);
+        }
+
+        function updateLoanStage(loanId, nextStatus, note = '') {
+            const loan = db.loans.find(l => l.id === loanId);
+            if (!loan) return;
+            loan.status = nextStatus;
+            if (note) loan.approvedByNote = note;
+            saveDB(`Loan ${loanId} -> ${nextStatus}`);
+        }
+
+        function deleteLoan(loanId) {
+            if (!confirm('Delete this loan record?')) return;
+            db.loans = db.loans.filter(l => l.id !== loanId);
+            saveDB('Loan Deleted');
+        }
+
+        function handleAddBankInterest(e) {
+            e.preventDefault();
+            const amount = Math.round(parseFloat(document.getElementById('bankIntAmount').value) || 0);
+            const notes = document.getElementById('bankIntNotes').value.trim();
+            if (!db.bankInterests) db.bankInterests = [];
+            db.bankInterests.unshift({
+                id: 'BNK' + Date.now().toString().slice(-4),
+                date: new Date().toISOString().split('T')[0],
+                amount,
+                notes
+            });
+            saveDB('Bank Interest Added to Corpus');
+            e.target.reset();
+        }
+
+        function deleteBankInterest(id) {
+            if (!confirm('Remove this bank interest entry?')) return;
+            db.bankInterests = db.bankInterests.filter(b => b.id !== id);
+            saveDB('Bank Interest Removed');
+        }
+
+        function setPresetFormula(expr) {
+            document.getElementById('masterFormulaInput').value = expr;
+        }
+
+        function saveMasterFormulaSettings() {
+            const rate = parseFloat(document.getElementById('masterRateInput').value) || 3;
+            const expr = document.getElementById('masterFormulaInput').value.trim() || "P * R / 100";
+            if (!db.settings) db.settings = {};
+            db.settings.interestRate = rate;
+            db.settings.interestFormula = expr;
+            saveDB('Master Formula & Rate Updated');
+            runFullCalculator();
+            alert(`Updated! Rate: ${rate}% | Interest Formula: Interest = ${expr}`);
+        }
+
+        function changeUserRole(uid, newRole) {
+            const u = db.users.find(x => x.userId === uid);
+            if (u) {
+                u.role = newRole;
+                saveDB(`Role updated for ${uid}`);
+            }
+        }
+
+        function changeUserMonthly(uid, amount) {
+            const u = db.users.find(x => x.userId === uid);
+            if (u) {
+                u.monthlyContribution = Math.round(parseFloat(amount) || 0);
+                saveDB(`Monthly rate updated for ${uid}`);
+            }
+        }
+
+        function deleteUser(uid) {
+            if (uid === 'master') {
+                alert('Cannot delete the Master account!');
+                return;
+            }
+            if (!confirm(`Delete user ${uid}?`)) return;
+            db.users = db.users.filter(u => u.userId !== uid);
+            saveDB(`User ${uid} deleted`);
+        }
+
+        function resetAllData() {
+            if (!confirm('WARNING: Reset all data to factory defaults?')) return;
+            localStorage.removeItem(STORAGE_KEY);
+            db = loadDB();
+            saveDB('Factory Reset');
+        }
+
+        function getLoanRepaymentStats(loan) {
+            const loanTxns = db.transactions.filter(t => t.loanId === loan.id && (t.type === 'Loan EMI' || t.type === 'Lump Sum Loan Repayment'));
+            const emiCount = loanTxns.filter(t => t.type === 'Loan EMI').length;
+            let paidPrincipal = 0;
+            let paidInterest = 0;
+            loanTxns.forEach(t => {
+                paidPrincipal += Math.round(Number(t.principal) || 0);
+                paidInterest += Math.round(Number(t.interest) || 0);
+            });
+            const totalPaid = paidPrincipal + paidInterest;
+            const remainingBalance = Math.max(0, Math.round(loan.totalPayable - totalPaid));
+            return {
+                emiCount,
+                installmentStatus: `${emiCount}/${loan.months}`,
+                paidPrincipal,
+                paidInterest,
+                totalPaid,
+                remainingBalance
+            };
+        }
+
+        function renderAll() {
+            const rate = db.settings?.interestRate ?? 3;
+            const expr = db.settings?.interestFormula || "P * R / 100";
+            document.getElementById('activeFormulaBadge').innerText = `Rate: ${rate}% | Interest = ${expr}`;
+
+            let totalMonthlyDeposit = 0;
+            let totalLoanPrincipalRepaid = 0;
+            let totalInterestCollected = 0;
+
+            db.transactions.forEach(t => {
+                const p = Math.round(Number(t.principal) || 0);
+                const i = Math.round(Number(t.interest) || 0);
+                if (t.type === 'Monthly Contribution') {
+                    totalMonthlyDeposit += p;
+                } else {
+                    totalLoanPrincipalRepaid += p;
+                }
+                totalInterestCollected += i;
+            });
+
+            let totalBankInterest = 0;
+            (db.bankInterests || []).forEach(b => {
+                totalBankInterest += Math.round(Number(b.amount) || 0);
+            });
+
+            let totalLoansDisbursed = 0;
+            db.loans.filter(l => l.status.includes('Approved')).forEach(l => {
+                totalLoansDisbursed += Math.round(Number(l.principal) || 0);
+            });
+
+            const netAvailableCorpus = (totalMonthlyDeposit + totalLoanPrincipalRepaid + totalInterestCollected + totalBankInterest) - totalLoansDisbursed;
+
+            document.getElementById('statTotalMonthlyDeposit').innerText = `₹${totalMonthlyDeposit.toLocaleString()}`;
+            document.getElementById('statTotalInterest').innerText = `₹${totalInterestCollected.toLocaleString()}`;
+            document.getElementById('statBankInterest').innerText = `₹${totalBankInterest.toLocaleString()}`;
+            document.getElementById('statLoansDisbursed').innerText = `- ₹${totalLoansDisbursed.toLocaleString()}`;
+            document.getElementById('statLoansRepaid').innerText = `+ ₹${totalLoanPrincipalRepaid.toLocaleString()}`;
+            document.getElementById('statAvailableCorpus').innerText = `₹${netAvailableCorpus.toLocaleString()}`;
+
+            let myMonthlyOnlyTotal = 0;
+            db.transactions.filter(t => t.userId === currentUser.userId && t.type === 'Monthly Contribution').forEach(t => {
+                myMonthlyOnlyTotal += Math.round(Number(t.principal) || 0);
+            });
+
+            document.getElementById('myPostBadge').innerText = currentUser.role.replace('_', ' ');
+            document.getElementById('myEmpOffice').innerText = `${currentUser.userId} (${currentUser.office || 'RMS'})`;
+            document.getElementById('myMonthlyRate').innerText = `₹${Math.round(currentUser.monthlyContribution || 1000).toLocaleString()}/mo`;
+            document.getElementById('myMonthlyPrincipalTotal').innerText = `₹${myMonthlyOnlyTotal.toLocaleString()}`;
+
+            const myApprovedLoans = db.loans.filter(l => l.userId === currentUser.userId && l.status.includes('Approved'));
+            let myTaken = 0, myPayable = 0, myPaid = 0, myRem = 0;
+            let latestProgressLabel = 'No Active Loan';
+
+            myApprovedLoans.forEach(l => {
+                const st = getLoanRepaymentStats(l);
+                myTaken += Math.round(l.principal);
+                myPayable += Math.round(l.totalPayable);
+                myPaid += st.totalPaid;
+                myRem += st.remainingBalance;
+                latestProgressLabel = `EMI Paid: ${st.installmentStatus}`;
+            });
+
+            document.getElementById('myLoanTaken').innerText = `₹${myTaken.toLocaleString()}`;
+            document.getElementById('myLoanPayable').innerText = `₹${myPayable.toLocaleString()}`;
+            document.getElementById('myLoanPaid').innerText = `₹${myPaid.toLocaleString()}`;
+            document.getElementById('myLoanRemaining').innerText = `₹${myRem.toLocaleString()}`;
+            document.getElementById('myLoanEmiProgress').innerText = latestProgressLabel;
+
+            const depSelect = document.getElementById('depUserId');
+            if (depSelect) {
+                const prevVal = depSelect.value;
+                depSelect.innerHTML = db.users.map(u => `<option value="${u.userId}">${u.name} (${u.userId})</option>`).join('');
+                if (prevVal && db.users.some(u => u.userId === prevVal)) {
+                    depSelect.value = prevVal;
+                }
+                onDepositMemberOrTypeChange();
+            }
+
+            const ledgerBody = document.getElementById('ledgerTableBody');
+            ledgerBody.innerHTML = db.transactions.map(t => {
+                const u = db.users.find(x => x.userId === t.userId);
+                const uName = u ? u.name : t.userId;
+                const p = Math.round(Number(t.principal) || 0);
+                const i = Math.round(Number(t.interest) || 0);
+                const tot = p + i;
+                const canDel = (currentUser.role === 'master' || currentUser.role === 'accountant');
+                const instBadge = (t.installmentLabel && t.installmentLabel !== '-') 
+                    ? `<span class="bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded text-xs">EMI ${t.installmentLabel}</span>` 
+                    : `<span class="text-slate-400">-</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-2.5">${t.date}</td>
+                        <td class="p-2.5 font-mono font-semibold text-xs">${t.userId}</td>
+                        <td class="p-2.5 font-medium">${uName}</td>
+                        <td class="p-2.5"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-800 rounded text-xs font-semibold">${t.type}</span></td>
+                        <td class="p-2.5">${instBadge}</td>
+                        <td class="p-2.5 font-semibold text-emerald-700">₹${p.toLocaleString()}</td>
+                        <td class="p-2.5 font-semibold text-amber-600">₹${i.toLocaleString()}</td>
+                        <td class="p-2.5 font-bold">₹${tot.toLocaleString()}</td>
+                        <td class="p-2.5 text-slate-500 text-xs">${t.notes || '-'}</td>
+                        <td class="p-2.5">
+                            ${canDel ? `<button onclick="deleteTransaction('${t.id}')" class="text-rose-600 hover:underline text-xs font-bold">Delete</button>` : '-'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            const activeLoansBody = document.getElementById('activeLoansSummaryBody');
+            const approvedLoans = db.loans.filter(l => l.status.includes('Approved'));
+            if (approvedLoans.length === 0) {
+                activeLoansBody.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-slate-400">No approved loans disbursed yet.</td></tr>`;
+            } else {
+                activeLoansBody.innerHTML = approvedLoans.map(l => {
+                    const st = getLoanRepaymentStats(l);
+                    const u = db.users.find(x => x.userId === l.userId);
+                    return `
+                        <tr class="hover:bg-amber-50/40">
+                            <td class="p-2.5 font-mono text-xs font-bold">${l.id}</td>
+                            <td class="p-2.5 font-semibold">${l.userName} <span class="text-xs font-mono text-slate-500">(${l.userId})</span></td>
+                            <td class="p-2.5 text-xs">${u?.office || l.office || '-'}</td>
+                            <td class="p-2.5 font-bold">₹${Math.round(l.principal).toLocaleString()}</td>
+                            <td class="p-2.5 text-amber-700">₹${Math.round(l.interestTotal || 0).toLocaleString()}</td>
+                            <td class="p-2.5 font-bold text-indigo-900">₹${Math.round(l.totalPayable).toLocaleString()}</td>
+                            <td class="p-2.5 font-semibold text-emerald-700">₹${Math.round(l.monthlyEMI).toLocaleString()}/mo</td>
+                            <td class="p-2.5"><span class="bg-indigo-100 text-indigo-900 font-bold px-2.5 py-1 rounded text-xs">${st.installmentStatus}</span></td>
+                            <td class="p-2.5 font-bold text-emerald-700">₹${st.totalPaid.toLocaleString()}</td>
+                            <td class="p-2.5 font-extrabold text-rose-700">₹${st.remainingBalance.toLocaleString()}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // Render Loan Approval Pipeline WITH Interest Column
+            const loanBody = document.getElementById('loanTableBody');
+            loanBody.innerHTML = db.loans.map(l => {
+                let badgeColor = 'bg-amber-100 text-amber-800';
+                if (l.status.includes('Approved')) badgeColor = 'bg-emerald-100 text-emerald-800';
+                if (l.status.includes('Rejected')) badgeColor = 'bg-rose-100 text-rose-800';
+
+                let actions = '';
+                const role = currentUser.role;
+
+                if (l.status === 'Pending Accountant' && (role === 'accountant' || role === 'master')) {
+                    actions += `<button onclick="updateLoanStage('${l.id}', 'Pending Vice Chairman')" class="bg-blue-600 text-white px-2.5 py-1 rounded text-xs font-semibold mr-1">Forward to VC</button>`;
+                    actions += `<button onclick="updateLoanStage('${l.id}', 'Rejected by Accountant')" class="bg-rose-500 text-white px-2 py-1 rounded text-xs">Reject</button>`;
+                }
+                else if (l.status === 'Pending Vice Chairman' && (role === 'vice_chairman' || role === 'master')) {
+                    actions += `<button onclick="updateLoanStage('${l.id}', 'Pending Chairman')" class="bg-indigo-600 text-white px-2.5 py-1 rounded text-xs font-semibold mr-1">Forward to Chairman</button>`;
+                    actions += `<button onclick="updateLoanStage('${l.id}', 'Approved (VC in Chairman Absence)', 'Approved by VC in absence of Chairman')" class="bg-emerald-600 text-white px-2.5 py-1 rounded text-xs font-semibold mr-1">Approve (Chairman Absent)</button>`;
+                    actions += `<button onclick="updateLoanStage('${l.id}', 'Rejected by VC')" class="bg-rose-500 text-white px-2 py-1 rounded text-xs">Reject</button>`;
+                }
+                else if (l.status === 'Pending Chairman' && (role === 'chairman' || role === 'master')) {
+                    actions += `<button onclick="updateLoanStage('${l.id}', 'Approved by Chairman', 'Final Approved by Chairman')" class="bg-emerald-700 text-white px-2.5 py-1 rounded text-xs font-semibold mr-1">Final Approve</button>`;
+                    actions += `<button onclick="updateLoanStage('${l.id}', 'Rejected by Chairman')" class="bg-rose-500 text-white px-2 py-1 rounded text-xs">Reject</button>`;
+                }
+
+                if (role === 'master') {
+                    actions += `<div class="mt-1 space-x-2">
+                        <button onclick="updateLoanStage('${l.id}', 'Approved (Master Override)', 'Master Direct Approval')" class="text-xs text-emerald-700 font-semibold underline">Master Approve</button>
+                        <button onclick="deleteLoan('${l.id}')" class="text-xs text-rose-600 font-semibold underline">Delete</button>
+                    </div>`;
+                }
+
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-2 font-mono text-xs">${l.id}</td>
+                        <td class="p-2 font-medium">${l.userName} <span class="text-xs text-slate-500">(${l.userId})</span></td>
+                        <td class="p-2 font-bold">₹${Math.round(l.principal).toLocaleString()}</td>
+                        <td class="p-2">${l.months} mos</td>
+                        <td class="p-2 text-amber-700 font-bold">₹${Math.round(l.interestTotal ?? ((l.totalPayable || 0) - (l.principal || 0))).toLocaleString()}</td>
+                        <td class="p-2 text-indigo-800 font-bold">₹${Math.round(l.totalPayable).toLocaleString()}</td>
+                        <td class="p-2 text-emerald-700 font-bold">₹${Math.round(l.monthlyEMI).toLocaleString()}/mo</td>
+                        <td class="p-2 text-xs">${l.purpose}</td>
+                        <td class="p-2">
+                            <span class="px-2 py-0.5 rounded text-xs font-bold ${badgeColor}">${l.status}</span>
+                            ${l.approvedByNote ? `<p class="text-[10px] text-slate-500 mt-0.5">${l.approvedByNote}</p>` : ''}
+                        </td>
+                        <td class="p-2">${actions || '<span class="text-xs text-slate-400">No pending action</span>'}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const userBody = document.getElementById('userTableBody');
+            if (userBody) {
+                const isMaster = currentUser.role === 'master';
+                userBody.innerHTML = db.users.map(u => `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-2.5 font-mono text-xs font-bold">${u.userId}</td>
+                        <td class="p-2.5 font-medium">${u.name}</td>
+                        <td class="p-2.5 text-xs">${u.sex || '-'}</td>
+                        <td class="p-2.5 text-xs">${u.office || '-'}</td>
+                        <td class="p-2.5">
+                            <select onchange="changeUserRole('${u.userId}', this.value)" class="p-1 border rounded text-xs bg-white" ${u.userId === 'master' && !isMaster ? 'disabled' : ''}>
+                                <option value="member" ${u.role === 'member' ? 'selected' : ''}>Member</option>
+                                <option value="accountant" ${u.role === 'accountant' ? 'selected' : ''}>Accountant</option>
+                                <option value="vice_chairman" ${u.role === 'vice_chairman' ? 'selected' : ''}>Vice Chairman</option>
+                                <option value="chairman" ${u.role === 'chairman' ? 'selected' : ''}>Chairman</option>
+                                <option value="master" ${u.role === 'master' ? 'selected' : ''}>Master</option>
+                            </select>
+                        </td>
+                        <td class="p-2.5">
+                            <input type="number" step="1" value="${Math.round(u.monthlyContribution || 1000)}" onchange="changeUserMonthly('${u.userId}', this.value)" class="w-24 p-1 border rounded text-xs">
+                        </td>
+                        <td class="p-2.5">
+                            ${isMaster ? `
+                                <span class="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded mr-1">${u.password}</span>
+                                <button onclick="masterResetUserPassword('${u.userId}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-0.5 rounded text-xs font-bold">Reset Pass</button>
+                            ` : '<span class="text-xs text-slate-400">Master Only</span>'}
+                        </td>
+                        <td class="p-2.5">
+                            <button onclick="deleteUser('${u.userId}')" class="text-rose-600 hover:underline text-xs font-bold">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            const bankBody = document.getElementById('bankInterestTableBody');
+            if (bankBody) {
+                bankBody.innerHTML = (db.bankInterests || []).map(b => `
+                    <tr>
+                        <td class="p-2">${b.date}</td>
+                        <td class="p-2 font-bold text-blue-700">₹${Math.round(b.amount).toLocaleString()}</td>
+                        <td class="p-2">${b.notes}</td>
+                        <td class="p-2"><button onclick="deleteBankInterest('${b.id}')" class="text-rose-600 font-bold hover:underline">Delete</button></td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function exportPDF() {
+            const element = document.getElementById('printableArea');
+            const opt = {
+                margin: 0.25,
+                filename: `Future_Secure_RMS_Society_${new Date().toISOString().slice(0,10)}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function exportExcel() {
+            const wb = XLSX.utils.book_new();
+            const wsUsers = XLSX.utils.json_to_sheet(db.users);
+            const wsTxns = XLSX.utils.json_to_sheet(db.transactions);
+            const wsLoans = XLSX.utils.json_to_sheet(db.loans);
+            const wsBank = XLSX.utils.json_to_sheet(db.bankInterests || []);
+
+            XLSX.utils.book_append_sheet(wb, wsTxns, "Transactions");
+            XLSX.utils.book_append_sheet(wb, wsLoans, "Loans");
+            XLSX.utils.book_append_sheet(wb, wsUsers, "Users");
+            XLSX.utils.book_append_sheet(wb, wsBank, "BankInterest");
+
+            XLSX.writeFile(wb, `Future_Secure_RMS_Data_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        function importExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                if (workbook.Sheets["Users"]) db.users = XLSX.utils.sheet_to_json(workbook.Sheets["Users"]);
+                if (workbook.Sheets["Transactions"]) db.transactions = XLSX.utils.sheet_to_json(workbook.Sheets["Transactions"]);
+                if (workbook.Sheets["Loans"]) db.loans = XLSX.utils.sheet_to_json(workbook.Sheets["Loans"]);
+                if (workbook.Sheets["BankInterest"]) db.bankInterests = XLSX.utils.sheet_to_json(workbook.Sheets["BankInterest"]);
+
+                saveDB('Excel Imported');
+                alert('Excel file imported and synced across the app!');
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    </script>
+</body>
+</html>
