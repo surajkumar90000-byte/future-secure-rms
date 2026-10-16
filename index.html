@@ -566,7 +566,7 @@
         const ACTIVE_USER_KEY = 'FUTURE_SECURE_RMS_ACTIVE_USER';
         
         // Paste your Firebase Realtime Database URL inside these quotes for automatic sync on all phones:
-        let DEFAULT_FIREBASE_URL = "https://future--rms-default-rtdb.firebaseio.com"; 
+        let DEFAULT_FIREBASE_URL = ""; 
 
         let currentUser = null;
 
@@ -619,17 +619,31 @@
             return url + 'society_db.json';
         }
 
+        // Repair incomplete/older local or cloud data before the UI renders.
+        function normalizeDB(data) {
+            const source = (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
+            return {
+                ...JSON.parse(JSON.stringify(defaultDB)),
+                ...source,
+                settings: {
+                    ...defaultDB.settings,
+                    ...(source.settings && typeof source.settings === 'object' ? source.settings : {})
+                },
+                users: Array.isArray(source.users) ? source.users : JSON.parse(JSON.stringify(defaultDB.users)),
+                transactions: Array.isArray(source.transactions) ? source.transactions : [],
+                loans: Array.isArray(source.loans) ? source.loans : [],
+                bankInterests: Array.isArray(source.bankInterests) ? source.bankInterests : []
+            };
+        }
+
         function loadDB() {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 try {
-                    const parsed = JSON.parse(saved);
-                    if (!parsed.settings) parsed.settings = defaultDB.settings;
-                    if (!parsed.bankInterests) parsed.bankInterests = [];
-                    return parsed;
-                } catch (e) { console.error(e); }
+                    return normalizeDB(JSON.parse(saved));
+                } catch (e) { console.error('Saved local database could not be parsed:', e); }
             }
-            return JSON.parse(JSON.stringify(defaultDB));
+            return normalizeDB(defaultDB);
         }
 
         async function syncFromCloud() {
@@ -641,16 +655,18 @@
             }
             try {
                 const res = await fetch(endpoint);
+                if (!res.ok) throw new Error(`Firebase HTTP ${res.status}`);
                 const cloudData = await res.json();
-                if (cloudData && cloudData.users) {
-                    db = cloudData;
-                    if (!db.settings) db.settings = defaultDB.settings;
-                    if (!db.bankInterests) db.bankInterests = [];
+                if (cloudData && Array.isArray(cloudData.users)) {
+                    db = normalizeDB(cloudData);
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
                     if (currentUser) renderAll();
+                } else if (cloudData !== null) {
+                    throw new Error('Firebase returned an unexpected database structure');
                 }
                 if (badge) { badge.innerText = "☁️ Cloud Synced Live"; badge.className = "text-emerald-300 font-bold"; }
             } catch (err) {
+                console.error('Firebase cloud sync failed:', err);
                 if (badge) { badge.innerText = "⚠️ Cloud Offline (Using Local)"; badge.className = "text-rose-300 font-semibold"; }
             }
         }
@@ -664,15 +680,18 @@
             const endpoint = getFirebaseEndpoint();
             if (endpoint) {
                 try {
-                    await fetch(endpoint, {
+                    const res = await fetch(endpoint, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(db)
+                        body: JSON.stringify(normalizeDB(db))
                     });
+                    if (!res.ok) throw new Error(`Firebase HTTP ${res.status}`);
                     const badge = document.getElementById('cloudStatusBadge');
                     if (badge) { badge.innerText = "☁️ Cloud Synced Live"; badge.className = "text-emerald-300 font-bold"; }
                 } catch (e) {
-                    console.warn("Cloud sync failed, saved locally.");
+                    console.warn('Cloud sync failed; saved locally only:', e);
+                    const badge = document.getElementById('cloudStatusBadge');
+                    if (badge) { badge.innerText = "⚠️ Cloud Offline (Using Local)"; badge.className = "text-rose-300 font-semibold"; }
                 }
             }
             if (currentUser) renderAll();
